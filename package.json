@@ -1,0 +1,24 @@
+{
+  "dependencies": {
+    "@angular/cli": "^21.2.11"
+  },
+  "name": "overwatch-stats-tracker",
+  "version": "0.0.0",
+  "description": "later",
+  "main": "index.js",
+  "devDependencies": {},
+  "scripts": {
+    "ng": "ng",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/HamieScripts/overwatch-stats-tracker.git"
+  },
+  "author": "jclark",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/HamieScripts/overwatch-stats-tracker/issues"
+  },
+  "homepage": "https://github.com/HamieScripts/overwatch-stats-tracker#readme"
+}
