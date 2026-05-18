@@ -1,24 +1,34 @@
-import { RawDataApi } from './raw-data.api';
-import { writeFile, mkdir } from 'fs/promises';
-import * as path from 'path';
+import { SaveUserApi } from './save-user-api';
+import sqlite3 from 'sqlite3';
+import path from 'path';
 
-const id = 'Hamie#21834'.replace('#', '-');
+const id = 'Hamie#21834';
+const dbPath = path.resolve(__dirname, '../database/data.db');
 
-const api = new RawDataApi().get(id).catch(err => console.error(err));
+async function run() {
+  const saveUserApi = new SaveUserApi();
+  await saveUserApi.save(id);
+  console.log(`Saved user ${id}`);
 
-api.then(async (data: unknown) => {
-    const filePath = `api/raw-data/${id.toLowerCase()}.json`;
-    const dir = path.dirname(filePath);
-    try {
-        await mkdir(dir, { recursive: true });
-    } catch (err) {
-        console.error('mkdir error', err);
-        throw err;
+  const db = new sqlite3.Database(dbPath, sqlite3.OPEN_READONLY, (err) => {
+    if (err) {
+      console.error('Error opening database:', err.message);
+      return;
     }
 
-    try {
-        await writeFile(filePath, JSON.stringify(data, null, 2));
-    } catch (err) {
-        console.error(err);
-    }
-}).catch(err => console.error(err));
+    db.get(
+      'SELECT id, name, avatar, namecard, title, endorsment_level, endorsment_frame FROM users WHERE id = ?',
+      [id.replace('#', '-').toLowerCase()],
+      (err, row) => {
+        if (err) {
+          console.error('Error querying database:', err.message);
+        } else {
+          console.log('DB row:', row);
+        }
+        db.close();
+      }
+    );
+  });
+}
+
+run().catch(err => console.error(err));

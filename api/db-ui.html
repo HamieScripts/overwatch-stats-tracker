@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Local SQLite DB UI</title>
+    <style>
+      body {
+        margin: 0;
+        min-height: 100vh;
+        font-family: Inter, system-ui, sans-serif;
+        background: #0f172a;
+        color: #e2e8f0;
+      }
+      .page {
+        max-width: 1140px;
+        padding: 1.5rem;
+        margin: 0 auto;
+      }
+      h1 {
+        margin: 0;
+        font-size: clamp(2rem, 3vw, 2.8rem);
+      }
+      .meta {
+        margin: 0.75rem 0 1.5rem;
+        color: #94a3b8;
+        line-height: 1.7;
+      }
+      .toolbar {
+        display: grid;
+        gap: 0.75rem;
+        grid-template-columns: 1fr auto;
+        align-items: center;
+        margin-bottom: 1.5rem;
+      }
+      button {
+        border: none;
+        border-radius: 999px;
+        padding: 0.9rem 1.3rem;
+        font-weight: 700;
+        background: linear-gradient(135deg, #7c3aed, #22d3ee);
+        color: white;
+        cursor: pointer;
+      }
+      button:disabled {
+        opacity: 0.65;
+        cursor: default;
+      }
+      .card {
+        background: #111827;
+        border: 1px solid #1f2937;
+        border-radius: 1rem;
+        padding: 1rem;
+        margin-bottom: 1.5rem;
+      }
+      textarea {
+        width: 100%;
+        min-height: 7rem;
+        border-radius: 0.85rem;
+        border: 1px solid #374151;
+        background: #0f172a;
+        color: #e2e8f0;
+        padding: 0.9rem 1rem;
+        resize: vertical;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        border-radius: 1rem;
+        overflow: hidden;
+      }
+      th,
+      td {
+        padding: 0.9rem 1rem;
+        border-bottom: 1px solid rgba(148, 163, 184, 0.12);
+      }
+      th {
+        background: rgba(255, 255, 255, 0.04);
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        font-size: 0.8rem;
+        color: #94a3b8;
+      }
+      tbody tr:hover {
+        background: rgba(148, 163, 184, 0.08);
+      }
+      .badge {
+        display: inline-flex;
+        padding: 0.35rem 0.75rem;
+        border-radius: 999px;
+        background: rgba(59, 130, 246, 0.16);
+        color: #bfdbfe;
+        font-size: 0.85rem;
+      }
+      .status {
+        margin: 0.5rem 0 0;
+        color: #94a3b8;
+      }
+      .empty {
+        padding: 2rem;
+        text-align: center;
+        color: #94a3b8;
+      }
+      @media (max-width: 720px) {
+        .toolbar {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page">
+      <h1>Local SQLite DB UI</h1>
+      <p class="meta">Connects to <code>/api/users</code> and executes custom SQL against <strong>database/data.db</strong>. Use the query editor for ad hoc reads.</p>
+
+      <div class="card toolbar">
+        <div>
+          <button id="refreshBtn">Refresh user list</button>
+          <button id="runQueryBtn">Run query</button>
+        </div>
+        <div id="dbPath" class="status"></div>
+      </div>
+
+      <div class="card">
+        <label for="sqlInput"><strong>SQL query</strong></label>
+        <textarea id="sqlInput">SELECT id, name, avatar, namecard, title, endorsment_level AS endorsmentLevel, endorsment_frame AS endorsmentFrame FROM users LIMIT 100;</textarea>
+        <p class="status">Only SELECT queries are supported in this UI.</p>
+      </div>
+
+      <div class="card">
+        <table id="resultsTable">
+          <thead></thead>
+          <tbody></tbody>
+        </table>
+        <div id="emptyState" class="empty">No results yet. Click Run query.</div>
+      </div>
+    </div>
+
+    <script>
+      const refreshBtn = document.getElementById('refreshBtn');
+      const runQueryBtn = document.getElementById('runQueryBtn');
+      const sqlInput = document.getElementById('sqlInput');
+      const resultsTable = document.getElementById('resultsTable');
+      const emptyState = document.getElementById('emptyState');
+      const dbPathEl = document.getElementById('dbPath');
+
+      async function updateStatus(text) {
+        dbPathEl.textContent = text;
+      }
+
+      async function renderRows(rows) {
+        const thead = resultsTable.querySelector('thead');
+        const tbody = resultsTable.querySelector('tbody');
+        tbody.innerHTML = '';
+
+        if (!rows || !rows.length) {
+          resultsTable.style.display = 'none';
+          emptyState.style.display = 'block';
+          return;
+        }
+
+        resultsTable.style.display = 'table';
+        emptyState.style.display = 'none';
+
+        const columns = Object.keys(rows[0]);
+        thead.innerHTML = '<tr>' + columns.map((col) => `<th>${col}</th>`).join('') + '</tr>';
+
+        rows.forEach((row) => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = columns
+            .map((col) => `<td>${row[col] === null ? '' : String(row[col]).replace(/</g, '&lt;')}</td>`)
+            .join('');
+          tbody.appendChild(tr);
+        });
+      }
+
+      async function fetchUsers() {
+        updateStatus('Loading saved users...');
+        try {
+          const response = await fetch('/api/users');
+          const data = await response.json();
+          if (response.ok) {
+            await renderRows(data.users);
+            updateStatus(`Connected to ${data.db}. ${data.users.length} user(s) loaded.`);
+          } else {
+            throw new Error(data.error || 'Failed to load users');
+          }
+        } catch (error) {
+          updateStatus(error.message);
+          resultsTable.style.display = 'none';
+          emptyState.style.display = 'block';
+        }
+      }
+
+      async function runQuery() {
+        const sql = sqlInput.value.trim();
+        if (!sql) return;
+        updateStatus('Running query...');
+        runQueryBtn.disabled = true;
+        try {
+          const response = await fetch('/api/query', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ sql })
+          });
+          const data = await response.json();
+          if (response.ok) {
+            await renderRows(data.rows);
+            updateStatus(`Query returned ${data.rows.length} rows.`);
+          } else {
+            throw new Error(data.error || 'Query failed');
+          }
+        } catch (error) {
+          updateStatus(error.message);
+          resultsTable.style.display = 'none';
+          emptyState.style.display = 'block';
+        } finally {
+          runQueryBtn.disabled = false;
+        }
+      }
+
+      refreshBtn.addEventListener('click', fetchUsers);
+      runQueryBtn.addEventListener('click', runQuery);
+      fetchUsers();
+    </script>
+  </body>
+</html>

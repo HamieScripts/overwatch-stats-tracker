@@ -1,15 +1,18 @@
 {
-  "dependencies": {
-    "@angular/cli": "^21.2.11",
-    "ts-node": "^10.9.2"
-  },
   "name": "overwatch-stats-tracker",
   "version": "0.0.0",
   "description": "later",
   "main": "index.js",
   "scripts": {
     "ng": "ng",
-    "test:api": "tsx ./api/test.ts"
+    "test:api": "tsx ./api/test.ts",
+    "db:init": "tsx ./database/init.ts",
+    "db:ui": "tsx ./api/db-server.ts"
+  },
+  "dependencies": {
+    "@angular/cli": "^21.2.11",
+    "ts-node": "^10.9.2",
+    "sqlite3": "^5.1.6"
   },
   "repository": {
     "type": "git",
