@@ -3,7 +3,8 @@
 
   async get(id: string): Promise<any> {
     const res = await fetch(`${this._baseUrl}/${id.replace('#', '-')}`);
-    if (!res.ok) throw new Error(`API error: ${res.status}`);
+    
+    if (!res.ok) throw new Error(`API error: ${res.status} ${res.statusText}`);
     return res.json();
   }
 }

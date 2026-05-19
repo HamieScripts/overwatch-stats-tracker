@@ -1,11 +1,11 @@
-import { SaveUserApi } from './save-user-api';
+import { SaveUserApi } from './save-user.api';
 import sqlite3 from 'sqlite3';
 import path from 'path';
+import { ids } from './test-ids';
 
-const id = 'Hamie#21834';
 const dbPath = path.resolve(__dirname, '../database/data.db');
 
-async function run() {
+async function run(id:string) {
   const saveUserApi = new SaveUserApi();
   await saveUserApi.save(id);
   console.log(`Saved user ${id}`);
@@ -23,7 +23,7 @@ async function run() {
         if (err) {
           console.error('Error querying database:', err.message);
         } else {
-          console.log('DB row:', row);
+        //   console.log('DB row:', row);
         }
         db.close();
       }
@@ -31,4 +31,9 @@ async function run() {
   });
 }
 
-run().catch(err => console.error(err));
+ids.forEach(async (userId: string) => {
+    let count = 0;
+    setTimeout(async () => {
+        await run(userId);
+    }, count++ * 5000); // 5 second delay between each API call
+});

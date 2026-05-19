@@ -1,0 +1,9 @@
+{
+    "chat.tools.terminal.autoApprove": {
+        "/^bash -c \"cd 'C:/Users/jamie/Documents/GitHub/overwatch-stats-tracker' && npm run db:init && npm run test:api\"$/": {
+            "approve": true,
+            "matchCommandLine": true
+        },
+        "Tee-Object": true
+    }
+}

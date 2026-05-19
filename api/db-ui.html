@@ -64,11 +64,19 @@
         resize: vertical;
         font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
       }
+      .table-wrapper {
+        overflow-x: auto;
+        margin: -1rem;
+        padding: 1rem;
+        -webkit-overflow-scrolling: touch;
+      }
       table {
-        width: 100%;
+        width: auto;
+        min-width: max-content;
         border-collapse: collapse;
         border-radius: 1rem;
         overflow: hidden;
+        table-layout: fixed;
       }
       th,
       td {
@@ -81,6 +89,28 @@
         letter-spacing: 0.08em;
         font-size: 0.8rem;
         color: #94a3b8;
+      }
+      td {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: normal;
+        word-break: break-word;
+        vertical-align: middle;
+        min-width: 6rem;
+      }
+      td img {
+        width: 3rem;
+        height: 3rem;
+        object-fit: cover;
+        border-radius: 0.5rem;
+        border: 1px solid rgba(148, 163, 184, 0.16);
+        display: block;
+        margin: 0 auto;
+      }
+      td a {
+        color: #60a5fa;
+        text-decoration: none;
+        font-size: 0.8rem;
       }
       tbody tr:hover {
         background: rgba(148, 163, 184, 0.08);
@@ -124,15 +154,17 @@
 
       <div class="card">
         <label for="sqlInput"><strong>SQL query</strong></label>
-        <textarea id="sqlInput">SELECT id, name, avatar, namecard, title, endorsment_level AS endorsmentLevel, endorsment_frame AS endorsmentFrame FROM users LIMIT 100;</textarea>
+        <textarea id="sqlInput">SELECT * FROM hero_stats LIMIT 100;</textarea>
         <p class="status">Only SELECT queries are supported in this UI.</p>
       </div>
 
       <div class="card">
-        <table id="resultsTable">
-          <thead></thead>
-          <tbody></tbody>
-        </table>
+        <div class="table-wrapper">
+          <table id="resultsTable">
+            <thead></thead>
+            <tbody></tbody>
+          </table>
+        </div>
         <div id="emptyState" class="empty">No results yet. Click Run query.</div>
       </div>
     </div>
@@ -168,9 +200,33 @@
 
         rows.forEach((row) => {
           const tr = document.createElement('tr');
-          tr.innerHTML = columns
-            .map((col) => `<td>${row[col] === null ? '' : String(row[col]).replace(/</g, '&lt;')}</td>`)
-            .join('');
+
+          columns.forEach((col) => {
+            const value = row[col];
+            const td = document.createElement('td');
+
+            if (col === 'avatar' || col === 'namecard') {
+              if (value) {
+                const link = document.createElement('a');
+                link.href = String(value);
+                link.target = '_blank';
+                link.rel = 'noreferrer';
+                const img = document.createElement('img');
+                img.src = String(value);
+                img.alt = col;
+                img.loading = 'lazy';
+                link.appendChild(img);
+                td.appendChild(link);
+              } else {
+                td.textContent = 'null';
+              }
+            } else {
+              td.textContent = value === null || value === undefined ? 'null' : String(value);
+            }
+
+            tr.appendChild(td);
+          });
+
           tbody.appendChild(tr);
         });
       }
